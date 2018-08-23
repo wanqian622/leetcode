@@ -216,22 +216,29 @@ eles in T-B are in L-R;
 then, we need to move T-B to R-L, T-B is in L-R, so, we just need to
 swap R-L with L-R;
 
+
+time: O(n^2)
+space: O(n/2)
+
 method2:
 The idea was firstly transpose the matrix and then flip it symmetrically. For instance,
 
 1  2  3             
 4  5  6
 7  8  9
-after transpose, it will be swap(matrix[i][j], matrix[j][i])
+after transpose, it will be swap(matrix[i][j], matrix[j][i]) --> 270
 
 1  4  7
 2  5  8
 3  6  9
-Then flip the matrix horizontally. (swap(matrix[i][j], matrix[i][matrix.length-1-j])
+Then flip the matrix horizontally. (swap(matrix[i][j], matrix[i][matrix.length-1-j]) --> 180
 
 7  4  1
 8  5  2
 9  6  3
+
+time: O(n^2)
+space: O(1)
 
 */
 //method1
@@ -276,40 +283,73 @@ class Solution {
 }
 
 
-// method2
+// methods2
 public class Solution {
     public void rotate(int[][] matrix) {
-        for(int i = 0; i<matrix.length; i++){
-            for(int j = i; j<matrix[0].length; j++){
-                int temp = 0;
-                temp = matrix[i][j];
-                matrix[i][j] = matrix[j][i];
-                matrix[j][i] = temp;
-            }
+      // corner case
+      if(matrix == null || matrix.length < 0){
+        return;
+      }
+
+      int rows = matrix.length;
+      int cols = matrix[0].length;
+
+      // flap 270 that is matrix[i][j] --> matrix[j][i]
+      for(int i = 0; i <rows; i++){
+        for(int j = i; j < cols; j++){
+          int temp = matrix[i][j];
+          matrix[i][j] = matrix[j][i];
+          matrix[i][j] = temp;
         }
-        for(int i =0 ; i<matrix.length; i++){
-            for(int j = 0; j<matrix.length/2; j++){
-                int temp = 0;
-                temp = matrix[i][j];
-                matrix[i][j] = matrix[i][matrix.length-1-j];
-                matrix[i][matrix.length-1-j] = temp;
-            }
+      }
+
+
+      // flap 180 that is matrix[i][j] --> matrix[i][n-j-1]
+      for(int i = 0; i < rows; i++){
+        for(int j = 0; j < cols/2; j++){
+          int temp = matrix[i][j];
+          matrix[i][j] = matrix[i][cols-j-1];
+          matrix[i][cols-j-1] = matrix[i][j];
         }
+      }
+
+      return;
+  
     }
 }
 
 // better and consice
+/*
+here is how it works~
+the outer loop is to control the range that we need to rotate;
+the inner loop is the index that we need to swap or rotate
+
+*/
+
 public class Solution {
-public void rotate(int[][] matrix) {
-    int n=matrix.length;
-    for (int i=0; i<n/2; i++) 
-        for (int j=i; j<n-i-1; j++) {
-            int tmp=matrix[i][j];
-            matrix[i][j]=matrix[n-j-1][i];
-            matrix[n-j-1][i]=matrix[n-i-1][n-j-1];
-            matrix[n-i-1][n-j-1]=matrix[j][n-i-1];
-            matrix[j][n-i-1]=tmp;
+    public void rotate(int[][] matrix) {
+      // corner case
+      if(matrix == null || matrix.length < 0){
+        return;
+      }
+
+      int n = matrix.length;
+
+      for(int i = 0; i < n/2; i++){
+        for(int j = i; j < n-i-1; j++){
+          // (left, top)
+          int temp = matrix[i][j];
+          // move (left, bottom) to (left, top)
+          matrix[i][j] = matrix[n-j-1][i];
+          // move(right, bottom) to (left, bottom)
+          matrix[n-j-1][i] = matrix[n-i-1][n-j-1];
+          // move(right, top) to (right, bottom)
+          matrix[n-i-1][n-j-1] = matrix[j][n-i-1];
+          // move(left, top) to (right top)
+          matrix[j][n-i-1] = temp;
         }
+      }
+  
     }
 }
 
@@ -484,13 +524,14 @@ choose this element or not
 time: O(2^n)
 space: O(n)
 
-other solutions
+method2:
+No messy indexing. Avoid the ConcurrentModificationException by using a temp list.
 https://leetcode.com/problems/subsets/discuss/27279/Simple-Java-Solution-with-For-Each-loops?page=2
 */
 
 
 
-
+// method1
 class Solution {
     public List<List<Integer>> subsets(int[] nums) {
         List<List<Integer>> res = new ArrayList<>();
@@ -516,5 +557,33 @@ class Solution {
       cur.remove(cur.size() - 1);
       dfs(nums, res, cur, level + 1);
 
+    }
+}
+
+// method2
+
+class Solution {
+    public List<List<Integer>> subsets(int[] nums) {
+        List<List<Integer>> res = new ArrayList<>();
+        // corner case
+        if(nums == null || nums.length < 1){
+          return res;
+        }
+
+        res.add(new ArrayList<>());
+        for(int i = 0; i < nums.length; i++){
+          // we need to set this, because if we use res directly to add cur,
+          // that means each time we add cur, res change, the inner loop is not allowed.
+          // it will throw Exception in thread "main" java.util.ConcurrentModificationException 
+          List<List<Integer>> tempRes = new ArrayList<>(); 
+          for(List<Integer> tempList : res){
+            List<Integer> cur = new ArrayList<>(tempList);
+            cur.add(nums[i]);
+            tempRes.add(cur);
+          }
+          res.addAll(tempRes);
+        }
+
+        return res;
     }
 }
